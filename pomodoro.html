@@ -318,9 +318,14 @@ const chkNotify = document.getElementById('chkNotify');
 // Audio context for beep
 let audioCtx = null;
 
+function canNotify() {
+  return typeof Notification !== 'undefined';
+}
+
 function beep(freq = 800, duration = 150, type = 'sine') {
   if (!chkSound.checked) return;
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   const osc = audioCtx.createOscillator();
   const gain = audioCtx.createGain();
   osc.type = type;
@@ -334,7 +339,7 @@ function beep(freq = 800, duration = 150, type = 'sine') {
 }
 
 function notify(title, body) {
-  if (!chkNotify.checked) return;
+  if (!chkNotify.checked || !canNotify()) return;
   if (Notification.permission === 'granted') {
     new Notification(title, { body, icon: '🍅' });
   } else if (Notification.permission === 'default') {
@@ -392,8 +397,7 @@ function startTimer() {
   if (intervalId) return;
   if (currentSessionDone) return; // already completed
 
-  // Request notification permission on first start
-  if (Notification.permission === 'default') {
+  if (canNotify() && Notification.permission === 'default') {
     Notification.requestPermission();
   }
 
@@ -500,6 +504,10 @@ document.addEventListener('keydown', e => {
 // Init
 ring.style.strokeDasharray = CIRCUMFERENCE;
 ring.style.strokeDashoffset = '0';
+if (!canNotify()) {
+  const notifyLabel = chkNotify.closest('label');
+  if (notifyLabel) notifyLabel.style.display = 'none';
+}
 updateDisplay();
 updateDots();
 </script>
